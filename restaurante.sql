@@ -15,24 +15,30 @@ USE restaurante;
 --
 -- Procedimientos
 --
-CREATE  PROCEDURE `Procedimiento` (IN `tipo_producto` INT)   
-        SELECT 
-            o.Orden, 
-            m.Mesero, 
-            o.Mesa, 
-            tp.Tipo, 
-            p.Productos, 
-            p.Precio
-        FROM 
-            ordenes o
-            LEFT JOIN ordenes_productos op ON op.id_orden = o.Orden
-            LEFT JOIN meseros m ON o.Atendió = m.Id
-            LEFT JOIN productos p ON op.id_productos = p.Id
-            LEFT JOIN categorias_productos cp ON p.Categoría = cp.Id
-            INNER JOIN tipo_producto tp ON cp.Tipo = tp.Id
-        WHERE 
-           tp.Tipo = tipo_producto;
+CREATE PROCEDURE `Procedimiento` (IN `tipo_producto` VARCHAR(10), IN `Pedido` INT)
 
+    SELECT 
+        `ordenes`.`Orden` AS `Orden`, 
+        `meseros`.`Mesero` AS `Mesero`, 
+        `ordenes`.`Mesa` AS `Mesa`, 
+        `tipo_producto`.`Tipo` AS `Tipo`, 
+        `productos`.`Productos` AS `Producto`, 
+        `productos`.`Precio` AS `Precio`,
+        (SELECT SUM(productos.Precio)
+        FROM `productos`
+        JOIN `ordenes_productos`  ON `ordenes_productos`.`id_productos` = `productos`.`Id`
+        WHERE `ordenes_productos`.`id_orden` = `ordenes`.`Orden`) AS `Suma_Precios` 
+
+    FROM 
+        (((((`ordenes`  
+        LEFT JOIN `ordenes_productos`  ON `ordenes_productos`.`id_orden` = `ordenes`.`Orden`) 
+        LEFT JOIN `meseros`  ON `ordenes`.`Atendió` = `meseros`.`Id`) 
+        LEFT JOIN `productos`  ON `ordenes_productos`.`id_productos` = `productos`.`Id`) 
+        LEFT JOIN `categorias_productos`  ON `productos`.`Categoría` = `categorias_productos`.`Id`)
+        LEFT JOIN `tipo_producto`  ON `categorias_productos`.`Tipo` = `tipo_producto`.`Id`)
+    WHERE 
+       `tp`.`Tipo` = tipo_producto
+       AND `ordenes`.`Orden` = Pedido;
         
 
 
