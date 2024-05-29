@@ -15,7 +15,7 @@ USE restaurante;
 --
 -- Procedimientos
 --
-CREATE PROCEDURE `Procedimiento` (IN `tipo_producto` VARCHAR(10), IN `Pedido` INT)
+CREATE PROCEDURE `Procedimiento2` (IN `tipo` VARCHAR(10), IN `Pedido` INT)
 
     SELECT 
         `ordenes`.`Orden` AS `Orden`, 
@@ -37,9 +37,8 @@ CREATE PROCEDURE `Procedimiento` (IN `tipo_producto` VARCHAR(10), IN `Pedido` IN
         LEFT JOIN `categorias_productos`  ON `productos`.`Categoría` = `categorias_productos`.`Id`)
         LEFT JOIN `tipo_producto`  ON `categorias_productos`.`Tipo` = `tipo_producto`.`Id`)
     WHERE 
-       `tp`.`Tipo` = tipo_producto
+       `tipo_producto`.`Tipo` = tipo
        AND `ordenes`.`Orden` = Pedido;
-        
 
 
 
