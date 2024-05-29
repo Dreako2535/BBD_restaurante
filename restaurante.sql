@@ -9,16 +9,13 @@ SET time_zone = "+00:00";
 --
 -- Base de datos: `restaurante`
 --
+CREATE DATABASE restaurante;
+USE restaurante;
 
-DELIMITER $$
 --
 -- Procedimientos
 --
-CREATE DEFINER=`root`@`localhost` PROCEDURE `Procedimiento` (IN `tipo_producto` INT)   BEGIN
-    IF tipo_producto NOT IN (1, 2) THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'El valor de tipo_producto debe ser 1 o 2';
-    ELSE
+CREATE  PROCEDURE `Procedimiento` (IN `tipo_producto` INT)   
         SELECT 
             o.Orden, 
             m.Mesero, 
@@ -32,34 +29,13 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `Procedimiento` (IN `tipo_producto` 
             LEFT JOIN meseros m ON o.Atendió = m.Id
             LEFT JOIN productos p ON op.id_productos = p.Id
             LEFT JOIN categorias_productos cp ON p.Categoría = cp.Id
-            LEFT JOIN tipo_producto tp ON cp.Tipo = tp.Id
+            INNER JOIN tipo_producto tp ON cp.Tipo = tp.Id
         WHERE 
-           tp.Id = tipo_producto
+           tp.Tipo = tipo_producto;
 
-        UNION ALL
+        
 
-        SELECT 
-            NULL AS Orden,  
-            NULL AS Mesero, 
-            NULL AS Mesa, 
-            'Total' AS Tipo, 
-            NULL AS Productos, 
-            SUM(p.Precio) AS Precio
-        FROM 
-            ordenes o
-            LEFT JOIN ordenes_productos op ON op.id_orden = o.Orden
-            LEFT JOIN meseros m ON o.Atendió = m.Id
-            LEFT JOIN productos p ON op.id_productos = p.Id
-            LEFT JOIN categorias_productos cp ON p.Categoría = cp.Id
-            LEFT JOIN tipo_producto tp ON cp.Tipo = tp.Id
-        WHERE 
-            tp.Id = tipo_producto
-        GROUP BY 
-            o.Orden;
-    END IF;
-END$$
 
-DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -32948,9 +32924,27 @@ INSERT INTO `tipo_producto` (`Id`, `Tipo`) VALUES
 --
 -- Estructura para la vista `factura`
 --
-DROP TABLE IF EXISTS `factura`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `factura`  AS SELECT `o`.`Orden` AS `Orden`, `m`.`Mesero` AS `Mesero`, `o`.`Mesa` AS `Mesa`, `p`.`Productos` AS `Productos`, `p`.`Precio` AS `Precio` FROM (((`ordenes` `o` left join `ordenes_productos` `op` on(`op`.`id_orden` = `o`.`Orden`)) left join `meseros` `m` on(`o`.`Atendió` = `m`.`Id`)) left join `productos` `p` on(`op`.`id_productos` = `p`.`Id`)) WHERE `o`.`Orden` = 2000union allselect NULL AS `Orden`,NULL AS `Mesero`,NULL AS `Mesa`,'Total' AS `Productos`,sum(`p`.`Precio`) AS `Precio` from (((`ordenes` `o` left join `ordenes_productos` `op` on(`op`.`id_orden` = `o`.`Orden`)) left join `meseros` `m` on(`o`.`Atendió` = `m`.`Id`)) left join `productos` `p` on(`op`.`id_productos` = `p`.`Id`)) where `o`.`Orden` = 2000 group by `o`.`Orden`  ;
+
+CREATE VIEW `factura2` AS 
+SELECT 
+    `ordenes`.`Orden` AS `Orden`, 
+    `meseros`.`Mesero` AS `Mesero`, 
+    `ordenes`.`Mesa` AS `Mesa`, 
+    `productos`.`Productos` AS `Producto`, 
+    `productos`.`Precio` AS `Precio`,
+    (SELECT SUM(`productos`.`Precio`) 
+     FROM `productos`
+     JOIN `ordenes_productos`  ON `ordenes_productos`.`id_productos` = `productos`.`Id`
+     WHERE `ordenes_productos`.`id_orden` = `ordenes`.`Orden`) AS `Suma_Precios`
+FROM 
+    (((`ordenes`  
+    LEFT JOIN `ordenes_productos`  ON `ordenes_productos`.`id_orden` = `ordenes`.`Orden`) 
+    LEFT JOIN `meseros`  ON `ordenes`.`Atendió` = `meseros`.`Id`) 
+    LEFT JOIN `productos`  ON `ordenes_productos`.`id_productos` = `productos`.`Id`) 
+WHERE 
+    `ordenes`.`Orden` = 2000;
+
 
 --
 -- Índices para tablas volcadas
@@ -33073,8 +33067,4 @@ ALTER TABLE `ordenes_productos`
 ALTER TABLE `productos`
   ADD CONSTRAINT `productos_ibfk_1` FOREIGN KEY (`Categoría`) REFERENCES `categorias_productos` (`Id`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
-
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 
